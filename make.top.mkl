@@ -1,0 +1,101 @@
+#####################################################################################
+#
+#The MIT License (MIT)
+#
+#Copyright (c) 2020 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+#
+#####################################################################################
+
+#can be GNU or INTEL
+CEED_ARCH=INTEL
+
+#absolute path to CEED
+export CEED_DIR:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+
+export CEED_INCLUDE_DIR=${CEED_DIR}/include
+export CEED_LIBS_DIR=${CEED_DIR}/libs
+export CEED_TPL_DIR=${CEED_DIR}/3rdParty
+
+#paths to installed blas and lapack libraries
+export CEED_BLAS_DIR =${MKLROOT}/lib/intel64 
+#export CEED_BLAS_DIR  =/home/spatel/A21/CEED/nekBench/3rdParty/BlasLapack
+#export CEED_LAPACK_DIR=/home/spatel/A21/CEED/nekBench/3rdParty/BlasLapack
+export CEED_BLAS_LIB  =-L${CEED_BLAS_DIR} -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core
+#export CEED_BLAS_LIB  =-lgfortran -L${CEED_BLAS_DIR} -lBlasLapack
+#export CEED_LAPACK_LIB=-L${CEED_LAPACK_DIR} -llapack
+
+#include OCCA
+ifndef OCCA_DIR
+  $(error environment variable [OCCA_DIR] is not set)
+endif
+
+#compilers to use for C/C++
+export CEED_MPICC = mpicc
+export CEED_MPICXX= mpicxx
+export CEED_LD    = mpicxx
+
+export CEED_CFLAGS= -cc=icx -O2 -fopenmp -g -Wall -Wshadow -Wno-unused-function
+export CEED_MPICFLAGS=$(CEED_CFLAGS)
+
+export CEED_CXXFLAGS= -cxx=icpx -O2 -fopenmp -g -Wall -Wshadow -Wno-unused-function -std=c++11
+export CEED_MPICXXFLAGS=$(CEED_CXXFLAGS)
+
+#export CEED_BLAS_DIR =${MKLROOT}/lib/intel64 
+#export CEED_BLAS_DIR=/home/spatel/A21/CEED/nekBench/3rdParty/BlasLapack
+#export CEED_LAPACK_DIR=/home/spatel/A21/CEED/nekBench/3rdParty/BlasLapack
+
+#export CEED_LIBS= ${CEED_BLAS_LIB} \
+#                  ${CEED_LAPACK_LIB} \
+#                  -Wl,-rpath,$(OCCA_DIR)/lib -L$(OCCA_DIR)/lib -locca
+
+export CEED_LIBS=${CEED_BLAS_LIB} -lpthread -lm -ldl \
+                 -Wl,-rpath, $(OCCA_DIR)/lib -L$(OCCA_DIR)/lib -locca
+
+#export CEED_LIBS=-Wl,-rpath, $(OCCA_DIR)/lib -L$(OCCA_DIR)/lib -locca
+
+#export CEED_LIBS=-Wl,-rpath,$(OCCA_DIR)/lib -L$(OCCA_DIR)/lib -locca
+
+export CEED_DEFINES=-DUSE_OCCA_MEM_BYTE_ALIGN=32 -DMKL_ILP64
+
+export CEED_INCLUDES=-I${CEED_INCLUDE_DIR} -I${OCCA_DIR}/include -I${MKLROOT}/include
+
+ifeq (GNU,${CEED_ARCH})
+  #CXXFLAGS+=-DUSE_OCCA_MEM_BYTE_ALIGN=32 -O2 -mavx2 -ftree-vectorize -march=native
+  #-funroll-all-loops
+  #CEED_LIBS+=-L/opt/apps/gcc5_2/atlas/3.10.2/lib/ -llapack -latlas  -lf77blas -lcblas -lptcblas -lptf77blas -lsatlas  -lgfortran  -L../../../libxsmm/lib -lxsmm -ldl
+else ifeq (INTEL,${CEED_ARCH})
+  #CEED_CXXFLAGS += -funroll-loops -xHost -qmkl
+  #CEED_LIBS+=-lgfortran
+  CEED_CXXFLAGS+=-funroll-loops -xHost
+  # CEED_LIBS+=-L/opt/apps/intel15_3/mkl/11.2.3/lib/intel64  -lmkl_rt
+  #  -fopt-info-vec-missed  -fopt-info
+  #-fopt-info
+else
+  $(error unknown arch for [CEED_ARCH] specified)
+endif
+
+export OBJ_COLOR = \033[0;36m
+export LIB_COLOR = \033[0;34m
+export EXE_COLOR = \033[0;32m
+export SOL_COLOR = \033[0;33m
+export NO_COLOR  = \033[m
+
+export CEED_MAKETOP_LOADED=true
