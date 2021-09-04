@@ -25,32 +25,24 @@ SOFTWARE.
 */
 
 #include "core.hpp"
-#include "mkl_lapack.h"
 
-/*
 extern "C" {
   void dgetrf_(int* M, int *N, double* A, int* lda, int* IPIV, int* INFO);
   void dgetri_(int* N, double* A, int* lda, int* IPIV, double* WORK, int* lwork, int* INFO);
 
-  //void sgetrf_(int* M, int *N, float* A, int* lda, int* IPIV, int* INFO);
-  //void sgetri_(int* N, float* A, int* lda, int* IPIV, float* WORK, int* lwork, int* INFO);
+  void sgetrf_(int* M, int *N, float* A, int* lda, int* IPIV, int* INFO);
+  void sgetri_(int* N, float* A, int* lda, int* IPIV, float* WORK, int* lwork, int* INFO);
 }
-*/
 
 void matrixInverse(int N, double *A){
-
-  //int lwork = N*N;
-  //int info;
-  
-  MKL_INT n = N, info, lwork;
-  lwork=n*n;
+  int lwork = N*N;
+  int info;
 
   // compute inverse mass matrix
-  //int *ipiv = (int*) calloc(N, sizeof(int));
-  MKL_INT *ipiv = (MKL_INT*) calloc(N, sizeof(MKL_INT));
+  int *ipiv = (int*) calloc(N, sizeof(int));
   double *work = (double*) calloc(lwork, sizeof(double));
 
-  dgetrf_(&n, &n, A, &n, ipiv, &info);
+  dgetrf_ (&N, &N, A, &N, ipiv, &info);
 
   if(info) {
     std::stringstream ss;
@@ -58,7 +50,7 @@ void matrixInverse(int N, double *A){
     CEED_ABORT(ss.str());
   }
 
-  dgetri_(&n, A, &n, ipiv, work, &lwork, &info);
+  dgetri_ (&N, A, &N, ipiv, work, &lwork, &info);
 
   if(info) {
     std::stringstream ss;
@@ -66,10 +58,8 @@ void matrixInverse(int N, double *A){
     CEED_ABORT(ss.str());
   }
 
-  //printf ("FREE 1 \n");
   free(work);
-  //printf ("FREE 2 \n");
-  free( (void*)ipiv );
+  free(ipiv);
 }
 
 void matrixInverse(int N, float *A){
@@ -80,7 +70,7 @@ void matrixInverse(int N, float *A){
   int *ipiv = (int*) calloc(N, sizeof(int));
   float *work = (float*) calloc(lwork, sizeof(float));
 
-  //sgetrf_ (&N, &N, A, &N, ipiv, &info);
+  sgetrf_ (&N, &N, A, &N, ipiv, &info);
 
   if(info) {
     std::stringstream ss;
@@ -88,7 +78,7 @@ void matrixInverse(int N, float *A){
     CEED_ABORT(ss.str());
   }
 
-  //sgetri_ (&N, A, &N, ipiv, work, &lwork, &info);
+  sgetri_ (&N, A, &N, ipiv, work, &lwork, &info);
 
   if(info) {
     std::stringstream ss;

@@ -25,20 +25,13 @@ SOFTWARE.
 */
 
 #include "core.hpp"
-#include "mkl_lapack.h"
 
-/*
 extern "C" {
-
   void sgeev_(char *JOBVL, char *JOBVR, int *N, float *A, int *LDA, float *WR, float *WI,
               float *VL, int *LDVL, float *VR, int *LDVR, float *WORK, int *LWORK, int *INFO );
-
   void dgeev_(char *JOBVL, char *JOBVR, int *N, double *A, int *LDA, double *WR, double *WI,
               double *VL, int *LDVL, double *VR, int *LDVR, double *WORK, int *LWORK, int *INFO );
-
 }
-*/
-
 
 // compute right eigenvectors
 void matrixEigenVectors(int N, double *A, double *VR, double *WR, double *WI){
@@ -50,45 +43,38 @@ void matrixEigenVectors(int N, double *A, double *VR, double *WR, double *WI){
   int LDVR = N;
   int LWORK = 8*N;
 
-  MKL_INT n = N, lda = N, ldvl = N, ldvr = N, info, lwork;
-
   double *VL = NULL;
   double *WORK  = (double*) calloc(LWORK,sizeof(double));
 
   double *tmpA  = (double*) calloc(N*N,sizeof(double));
   double *tmpVR = (double*) calloc(N*N,sizeof(double));
 
-  for(int i=0;i<N;++i){
+  for(int n=0;n<N;++n){
     for(int m=0;m<N;++m){
-      tmpA[i+m*N] = A[i*N+m];
+      tmpA[n+m*N] = A[n*N+m];
     }
   }
 
   int INFO = -999;
-  lwork = 8*n;
 
-  //printf("LDA =  %d, \n", LDA);
-  //printf("N   =  %d, \n", N);
+  dgeev_ (&JOBVL, &JOBVR, &N, tmpA, &LDA, WR, WI,
+          VL, &LDVL, tmpVR, &LDVR, WORK, &LWORK, &INFO);
 
-  dgeev_(&JOBVL, &JOBVR, &n, tmpA, &lda, WR, WI,
-         VL, &ldvl, tmpVR, &ldvr, WORK, &lwork, &info);
-
-  if(info) {
+  if(INFO) {
     std::stringstream ss;
-    ss << "dgeev_ reports info = " << info;
+    ss << "dgeev_ reports info = " << INFO;
     CEED_ABORT(ss.str());
   }
 
-  for(int i=0;i<N;++i){
+  for(int n=0;n<N;++n){
     for(int m=0;m<N;++m){
-      VR[i+m*N] = tmpVR[i*N+m];
+      VR[n+m*N] = tmpVR[n*N+m];
     }
   }
 
   free(tmpVR);
   free(tmpA);
   free(WORK);
-
 }
 
 // compute right eigenvectors
@@ -115,8 +101,8 @@ void matrixEigenVectors(int N, float *A, float *VR, float *WR, float *WI){
 
   int INFO = -999;
 
-  //sgeev_(&JOBVL, &JOBVR, &N, tmpA, &LDA, WR, WI,
-  //       VL, &LDVL, tmpVR, &LDVR, WORK, &LWORK, &INFO);
+  sgeev_ (&JOBVL, &JOBVR, &N, tmpA, &LDA, WR, WI,
+          VL, &LDVL, tmpVR, &LDVR, WORK, &LWORK, &INFO);
 
   if(INFO) {
     std::stringstream ss;
@@ -151,10 +137,8 @@ void matrixEigenValues(int N, double *A, double *WR, double *WI){
 
   int INFO = -999;
 
-  /*
   dgeev_ (&JOBVL, &JOBVR, &N, A, &LDA, WR, WI,
           VL, &LDVL, VR, &LDVR, WORK, &LWORK, &INFO);
-  */
 
   if(INFO) {
     std::stringstream ss;
@@ -181,8 +165,8 @@ void matrixEigenValues(int N, float *A, float *WR, float *WI){
 
   int INFO = -999;
 
-  //sgeev_ (&JOBVL, &JOBVR, &N, A, &LDA, WR, WI,
-  //        VL, &LDVL, VR, &LDVR, WORK, &LWORK, &INFO);
+  sgeev_ (&JOBVL, &JOBVR, &N, A, &LDA, WR, WI,
+          VL, &LDVL, VR, &LDVR, WORK, &LWORK, &INFO);
 
   if(INFO) {
     std::stringstream ss;
