@@ -2,7 +2,7 @@ project(linAlg)
 
 set(linAlg-src
     linAlg.cpp
-    linAlg.cpp
+    linAlgSetup.cpp
 )
 
 add_library(linAlg STATIC ${linAlg-src})
@@ -17,5 +17,6 @@ target_compile_definitions(linAlg PUBLIC
 
 target_link_libraries(linAlg PUBLIC libocca)
 #set_target_properties(ogs PROPERTIES PUBLIC_HEADER ogs.hpp)
+set_target_properties(linAlg PROPERTIES PUBLIC_HEADER linAlg.hpp)
 
 install(DIRECTORY okl/ DESTINATION okl)
