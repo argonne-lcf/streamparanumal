@@ -87,4 +87,9 @@ void platform_t::DeviceProperties(){
     // props["compiler_flags"] += " -funsafe-math-optimizations ";
     // props["compiler_flags"] += " -ffast-math ";
   }
+
+  if(device.mode()=="dpcpp"){ //add backend compiler optimization for dpcpp
+    //props["compiler_flags"] += " -fsycl-explicit-simd ";
+  }
+
 }

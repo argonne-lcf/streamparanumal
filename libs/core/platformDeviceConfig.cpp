@@ -49,6 +49,9 @@ void platform_t::DeviceConfig(){
   else if(settings.compareSetting("THREAD MODEL", "OpenCL")){
     mode = "{mode: 'OpenCL', platform_id : " + std::to_string(plat) +"}";
   }
+  else if(settings.compareSetting("THREAD MODEL", "dpcpp")){ 
+    mode = "{mode: 'dpcpp', platform_id : " + std::to_string(plat) +"}";
+  }
   else if(settings.compareSetting("THREAD MODEL", "OpenMP")){
     mode = "{mode: 'OpenMP'}";
   }
@@ -59,10 +62,11 @@ void platform_t::DeviceConfig(){
   //add a device_id number for some modes
   if (  settings.compareSetting("THREAD MODEL", "CUDA")
       ||settings.compareSetting("THREAD MODEL", "HIP")
-      ||settings.compareSetting("THREAD MODEL", "OpenCL")) {
+      ||settings.compareSetting("THREAD MODEL", "OpenCL")
+      ||settings.compareSetting("THREAD MODEL", "dpcpp") ) {
     //for testing a single device, run with 1 rank and specify DEVICE NUMBER
     if (size==1) {
-      settings.getSetting("DEVICE NUMBER",device_id);
+      settings.getSetting("DEVICE NUMBER", device_id);
     } else {
       //find out how many ranks and devices are on this system
       char* hostnames = (char *) ::malloc(size*sizeof(char)*MPI_MAX_PROCESSOR_NAME);
