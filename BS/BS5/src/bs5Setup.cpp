@@ -42,8 +42,14 @@ bs5_t& bs5_t::Setup(platform_t &platform, settings_t& settings) {
   else
     kernelInfo["defines/" "USE_HIP"] = 0;
 
-  bs5->kernel1 = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_1", kernelInfo);
-  bs5->kernel2 = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_2", kernelInfo);
+  //for Non-CUDA Implemenations
+  bs5->kernel1  = platform.buildKernel(DBS5 "/okl/bs5_a.okl", "bs5_1a", kernelInfo);
+  bs5->kernel2  = platform.buildKernel(DBS5 "/okl/bs5_a.okl", "bs5_2", kernelInfo);
+
+  /*
+  bs5->kernel1  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_1", kernelInfo);
+  bs5->kernel2  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_2", kernelInfo);
+  */
 
   return *bs5;
 }
