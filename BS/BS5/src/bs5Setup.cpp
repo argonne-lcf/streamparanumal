@@ -37,19 +37,28 @@ bs5_t& bs5_t::Setup(platform_t &platform, settings_t& settings) {
 
   kernelInfo["defines/" "p_blockSize"] = bs5->blockSize;
 
-  if(settings.compareSetting("THREAD MODEL", "HIP"))
-    kernelInfo["defines/" "USE_HIP"] = 1;
-  else
-    kernelInfo["defines/" "USE_HIP"] = 0;
+  if(settings.compareSetting("THREAD MODEL", "HIP")) {
+    kernelInfo["defines/" "USE_HIP"] = 1; 
+    kernelInfo["defines/" "USE_CUDA"] = 0;
+  } else if(settings.compareSetting("THREAD MODEL", "CUDA")) {
+    kernelInfo["defines/" "USE_HIP"] = 0; 
+    kernelInfo["defines/" "USE_CUDA"] = 1;
+  } else {
+    kernelInfo["defines/" "USE_HIP"] = 0; 
+    kernelInfo["defines/" "USE_CUDA"] = 0;
+  }
 
   //for Non-CUDA Implemenations
-  bs5->kernel1  = platform.buildKernel(DBS5 "/okl/bs5_a.okl", "bs5_1a", kernelInfo);
-  bs5->kernel2  = platform.buildKernel(DBS5 "/okl/bs5_a.okl", "bs5_2", kernelInfo);
+  //bs5->kernel1  = platform.buildKernel(DBS5 "/okl/bs5_a.okl", "bs5_1a", kernelInfo);
+  //bs5->kernel2  = platform.buildKernel(DBS5 "/okl/bs5_a.okl", "bs5_2", kernelInfo);
 
-  /*
-  bs5->kernel1  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_1", kernelInfo);
-  bs5->kernel2  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_2", kernelInfo);
-  */
+  if(settings.compareSetting("THREAD MODEL", "HIP") || settings.compareSetting("THREAD MODEL", "CUDA")) {
+     bs5->kernel1  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_1", kernelInfo);
+     bs5->kernel2  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_2", kernelInfo);
+  } else {
+     bs5->kernel1  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_1a", kernelInfo);
+     bs5->kernel2  = platform.buildKernel(DBS5 "/okl/bs5.okl", "bs5_2", kernelInfo);
+  }
 
   return *bs5;
 }
