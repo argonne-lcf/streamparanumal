@@ -15,6 +15,8 @@ MPIFC=mpiifx
 
 PREFIX_PATHS=
 
+BUILD_TYPE="Release"
+
 # Default build parameters
 : ${BUILD_DIR:=`pwd`/build}
 : ${INSTALL_DIR:=`pwd`/install}
