@@ -1,7 +1,7 @@
 CC=icx
 CXX=icpx
 
-SYCL_ROOT=${CMPROOT}/linux
+export SYCL_ROOT=${CMPROOT}/linux
 
 # Default build parameters
 : ${BUILD_DIR:=`pwd`/build}
