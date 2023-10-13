@@ -30,7 +30,9 @@ SOFTWARE.
 #include "platform.hpp"
 #include "timer.hpp"
 
+#ifndef DBS2
 #define DBS2 STREAM_DIR"/BS/BS2/"
+#endif
 
 using namespace libp;
 
@@ -62,4 +64,3 @@ public:
 
 
 #endif
-

@@ -30,7 +30,9 @@ SOFTWARE.
 #include "mesh.hpp"
 #include "timer.hpp"
 
+#ifndef DBS8
 #define DBS8 STREAM_DIR"/BS/BS8/"
+#endif
 
 using namespace libp;
 
@@ -63,4 +65,3 @@ public:
 
 
 #endif
-
