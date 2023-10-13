@@ -224,10 +224,10 @@ void mesh_t::FaceNodeMatchingTet3D(int _N, dfloat _r[], dfloat _s[], dfloat _t[]
 
 static void xyztorst(int Npoints, dfloat x[], dfloat y[], dfloat z[], dfloat r[], dfloat s[], dfloat t[]) {
   // vertices of tetrahedron
-  dfloat v1[3] = {-1.0, -1./sqrt(3.), -1./sqrt(6.)};
-  dfloat v2[3] = { 1.0, -1./sqrt(3.), -1./sqrt(6.)};
-  dfloat v3[3] = { 0.0,  2./sqrt(3.), -1./sqrt(6.)};
-  dfloat v4[3] = { 0.0,  0.,           3./sqrt(6.)};
+  dfloat v1[3] = {dfloat(-1.0), dfloat(-1./sqrt(3.)), dfloat(-1./sqrt(6.))};
+  dfloat v2[3] = {dfloat(1.0),  dfloat(-1./sqrt(3.)), dfloat(-1./sqrt(6.))};
+  dfloat v3[3] = {dfloat(0.0),  dfloat(2./sqrt(3.)),  dfloat(-1./sqrt(6.))};
+  dfloat v4[3] = {dfloat(0.0),  dfloat(0.),           dfloat(3./sqrt(6.))};
 
   memory<dfloat> XYZ(3*Npoints);
   memory<dfloat> RST(3*Npoints);
@@ -309,10 +309,10 @@ void mesh_t::WarpBlendTransformTet3D(int _N, int _Npoints, dfloat _r[], dfloat _
   }
 
   // vertices of tetrahedron
-  dfloat v1[3] = {-1.0, -1./sqrt(3.), -1./sqrt(6.)};
-  dfloat v2[3] = { 1.0, -1./sqrt(3.), -1./sqrt(6.)};
-  dfloat v3[3] = { 0.0,  2./sqrt(3.), -1./sqrt(6.)};
-  dfloat v4[3] = { 0.0,  0.,           3./sqrt(6.)};
+  dfloat v1[3] = {dfloat(-1.0), dfloat(-1./sqrt(3.)), dfloat(-1./sqrt(6.))};
+  dfloat v2[3] = {dfloat(1.0),  dfloat(-1./sqrt(3.)), dfloat(-1./sqrt(6.))};
+  dfloat v3[3] = {dfloat(0.0),  dfloat(2./sqrt(3.)),  dfloat(-1./sqrt(6.))};
+  dfloat v4[3] = {dfloat(0.0),  dfloat(0.),           dfloat(3./sqrt(6.))};
 
   // orthogonal axis tangents on faces 1-4
   dfloat t1[4][4], t2[4][4];
