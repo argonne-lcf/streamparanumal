@@ -1,3 +1,8 @@
+CC=icx
+CXX=icpx
+
+SYCL_ROOT=${CMPROOT}/linux
+
 # Default build parameters
 : ${BUILD_DIR:=`pwd`/build}
 : ${INSTALL_DIR:=`pwd`/install}
