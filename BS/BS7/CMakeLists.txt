@@ -16,3 +16,4 @@ target_compile_definitions(BS7
 )
 
 install(TARGETS BS7)
+install(DIRECTORY okl/ DESTINATION okl)
