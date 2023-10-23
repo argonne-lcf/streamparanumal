@@ -1,7 +1,7 @@
 CC=icx
 CXX=icpx
-
 export SYCL_ROOT=${CMPROOT}/linux
+GPU_AWARE_MPI="ON"
 
 # Default build parameters
 : ${BUILD_DIR:=`pwd`/build}
@@ -13,6 +13,7 @@ export SYCL_ROOT=${CMPROOT}/linux
 
 : ${MPICC:="mpicc"}
 : ${MPICXX:="mpicxx"}
+: ${GPU_AWARE_MPI:="OFF"}
 
 if [ -d ${BUILD_DIR} ]; then
   echo "Removing existing build directory"
@@ -34,4 +35,5 @@ cmake -S . -B ${BUILD_DIR} \
   -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
   -DMPI_C_COMPILER=${MPICC} \
   -DMPI_CXX_COMPILER=${MPICXX} \
+  -DGPU_AWARE_MPI=${GPU_AWARE_MPI} \
   -DEXTERNAL_OCCA=${EXTERNAL_OCCA}
