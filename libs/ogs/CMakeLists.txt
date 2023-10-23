@@ -1,5 +1,7 @@
 project(ogslib)
 
+option(GPU_AWARE_MPI "Using a GPU aware MPI implementation" OFF)
+
 set(ogslib-src
   ogsAllToAll.cpp
   ogsAuto.cpp
@@ -28,6 +30,11 @@ target_compile_definitions(ogs
     "LIBP_DIR=\"${CMAKE_INSTALL_PREFIX}\""
     "OGS_DIR=\"${CMAKE_INSTALL_PREFIX}\""
 )
+
+if(GPU_AWARE_MPI)
+  message("--- Building libogs with GPU aware mpi")
+  target_compile_definitions(ogs PUBLIC "GPU_AWARE_MPI")
+endif()
 
 install(TARGETS ogs DESTINATION lib)
 install(DIRECTORY okl/ DESTINATION okl)
