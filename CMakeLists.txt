@@ -30,3 +30,11 @@ add_subdirectory(libs)
 add_subdirectory(BS)
 
 install(DIRECTORY include/ DESTINATION include)
+
+install(CODE
+  "configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/modulefiles/streamparanumal
+    ${CMAKE_INSTALL_PREFIX}/modulefiles/streamparanumal
+    @ONLY
+  )"
+)

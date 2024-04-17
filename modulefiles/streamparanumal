@@ -1,0 +1,13 @@
+#%Module
+module-whatis {}
+
+set STREAMP_ROOT @CMAKE_INSTALL_PREFIX@
+
+prepend-path PATH $STREAMP_ROOT/bin
+prepend-path LIBRARY_PATH $STREAMP_ROOT/lib
+prepend-path LD_LIBRARY_PATH $STREAMP_ROOT/lib
+prepend-path INCLUDE $STREAMP_ROOT/include
+prepend-path C_INCLUDE_PATH $STREAMP_ROOT/include
+prepend-path CPLUS_INCLUDE_PATH $STREAMP_ROOT/include
+
+setenv STREAMP_ROOT $STREAMP_ROOT
