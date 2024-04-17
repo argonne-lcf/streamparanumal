@@ -65,3 +65,6 @@ BS/BS5/BS5
 BS/BS6/BS6
 BS/BS7/BS7
 BS/BS8/BS8
+
+# IDE Files
+.vscode
