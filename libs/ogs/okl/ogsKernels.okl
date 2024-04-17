@@ -31,6 +31,7 @@ SOFTWARE.
 ------------------------------------------------------------------------------*/
 #if 0
 //OCCA_USE_DPCPP!=1
+// Original version
 @kernel void gatherScatter(const dlong Ngather,
 			   const dlong Nblocks,
                            const int K,
@@ -82,7 +83,12 @@ SOFTWARE.
     }
   }
 }
-#else
+#endif
+
+
+#if 0
+// updated version 10/23, simplified
+// GOOD !
 @kernel void gatherScatter(const dlong Ngather,
 			   const dlong Nblocks,
                            const int K,
@@ -93,36 +99,6 @@ SOFTWARE.
 			   @restrict const dlong *scatterIds,
 			   @restrict           T *q) {
 
-#if 0
-  for(dlong k=0;k<K;++k;@outer(1)){
-    for(dlong b=0;b<Nblocks;++b;@outer(0)){
-      
-      for(dlong n=0;n<p_blockSize;++n;@inner(0)){
-
-	const dlong blockStart = blockStarts[b];
-        const dlong blockEnd   = blockStarts[b+1];
-	
-        for (dlong row=blockStart+n;row<blockEnd;row+=p_blockSize) {
-	  T gq = OGS_OP_INIT;
-
-	  const dlong rowStart = gatherStarts[row]  ;
-	  const dlong rowEnd   = gatherStarts[row+1];
-	  
-	  for (dlong i=rowStart;i<rowEnd;i++) {
-	    OGS_OP(gq, q[k+K*gatherIds[i]]);
-	  }
-
-	  const dlong colStart = scatterStarts[row]  ;
-	  const dlong colEnd   = scatterStarts[row+1];
-
-	  for (dlong i=colStart;i<colEnd;i++) {
-	    q[k+K*scatterIds[i]] = gq;
-	  }
-	}
-      }
-    }
-  }
-#else
   for(dlong k=0;k<K;++k;@outer(1)){
     for(dlong b=0;b<(Ngather+p_blockSize-1)/p_blockSize;++b;@outer(0)){
       
@@ -157,8 +133,220 @@ SOFTWARE.
       }
     }
   }
-#endif
+
 }
+#endif
+
+
+
+// number of warps per thread-block
+//#define p_Nwarp 4
+#define p_Nwarp 6
+// number of threads per warp
+#define p_Ntpw 32
+// number of threads per gather
+#define p_Ntpg 1
+// number of gathers per warp
+#define p_Ngpw (p_Ntpw/p_Ntpg)
+// number of gathers per thread-block
+#define p_Ngptb (p_Nwarp*p_Ngpw)
+// mask for threads in warp engaging in shfl
+#define p_mask 0xffffffff
+
+// this allows different gather and scatter lists
+#if 0
+@kernel void gatherScatter(const dlong Ngather,
+			   const dlong Nblocks,
+                           const int K,
+			   @restrict const dlong *blockStarts,
+                           @restrict const  dlong *  gatherStarts,
+                           @restrict const  dlong *  gatherIds,
+                           @restrict const  dlong *  scatterStarts,
+                           @restrict const  dlong *  scatterIds,
+                           @restrict T *  q){
+  
+  for(dlong b=0;b<(Ngather+p_Ngptb-1)/p_Ngptb;++b;@outer(0)){
+    
+    for(dlong w=0;w<p_Nwarp;++w;@inner(2)){
+      for(dlong g=0;g<p_Ngpw;++g;@inner(1)){
+        for(dlong t=0;t<p_Ntpg;++t;@inner(0)){
+          
+          int n = g + w*p_Ngpw + b*p_Ngptb;
+          if(n<Ngather){
+            
+            const dlong startG = gatherStarts[n];
+            const dlong endG = gatherStarts[n+1];
+
+            const dlong startS = scatterStarts[n];
+            const dlong endS = scatterStarts[n+1];
+	    
+            T gq = 0;
+            
+	    //	    if((startG+1)!=endG) do not omit this because the gathers might be longer than the scatters
+            {
+              // gather
+              dlong m = startG + t;
+              while(m<endG){
+                const dlong id = gatherIds[m];
+                gq += q[id];
+                m+=p_Ntpg;
+              }
+              
+              // following assumes number of thread per gather is a power of 2, at most 32 total (i.e. <= warp size)
+              // it uses shfl down sync to gather the row sum
+              // then it uses a broadcast for each row sum
+#if 0   
+#if p_Ntpg>16
+              gq += __shfl_down_sync(p_mask, gq, 16);
+#endif
+#if p_Ntpg>8
+              gq += __shfl_down_sync(p_mask, gq, 8);
+#endif
+#if p_Ntpg>4
+              gq += __shfl_down_sync(p_mask, gq, 4);
+#endif
+#if p_Ntpg>2
+              gq += __shfl_down_sync(p_mask, gq, 2);
+#endif
+#if p_Ntpg>1
+              gq += __shfl_down_sync(p_mask, gq, 1);
+              gq = __shfl_sync(p_mask, gq, g*p_Ntpg); // broadcast to all threads in subwarp
+#endif
+#else
+
+
+#if p_Ntpg>1
+	      auto grp = item_.get_sub_group();
+	      int l = g*p_Ntpg +t;
+#if p_Ntpg>8	      
+              gq += sycl::select_from_group(grp, gq, l+8);
+#endif
+#if p_Ntpg>4
+              gq += sycl::select_from_group(grp, gq, l+4);
+#endif
+#if p_Ntpg>2
+              gq += sycl::select_from_group(grp, gq, l+2);
+#endif	
+              gq += sycl::select_from_group(grp, gq, l+1);
+	      gq =  sycl::select_from_group(grp, gq, g*p_Ntpg);
+#endif      
+	      
+#endif
+            }
+          
+	    //            if((startS+1)!=endS){
+	    {
+              // scatter
+              dlong m = startS + t;
+              while(m<endS){
+                const dlong id = scatterIds[m];
+                q[id] = gq;
+                m+=p_Ntpg;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+#endif
+
+#if 1
+// use same gather and scatter
+@kernel void gatherScatter(const dlong Ngather,
+			   const dlong Nblocks,
+                           const int K,
+			   @restrict const dlong *blockStarts,
+                           @restrict const  dlong *  gatherStarts,
+                           @restrict const  dlong *  gatherIds,
+                           @restrict const  dlong *  scatterStarts,
+                           @restrict const  dlong *  scatterIds,
+                           @restrict T *  q){
+  
+  for(dlong b=0;b<(Ngather+p_Ngptb-1)/p_Ngptb;++b;@outer(0)){
+    
+    for(dlong w=0;w<p_Nwarp;++w;@inner(2)){
+      for(dlong g=0;g<p_Ngpw;++g;@inner(1)){
+        for(dlong t=0;t<p_Ntpg;++t;@inner(0)){
+          
+          int n = g + w*p_Ngpw + b*p_Ngptb;
+          if(n<Ngather){
+            
+            const dlong startG = gatherStarts[n];
+            const dlong endG = gatherStarts[n+1];
+
+            T gq = 0;
+            
+	    if((startG+1)!=endG) 
+            {
+              // gather
+              dlong m = startG + t;
+              while(m<endG){
+                const dlong id = gatherIds[m];
+                gq += q[id];
+                m+=p_Ntpg;
+              }
+              
+              // following assumes number of thread per gather is a power of 2, at most 32 total (i.e. <= warp size)
+              // it uses shfl down sync to gather the row sum
+              // then it uses a broadcast for each row sum
+#if 0   
+#if p_Ntpg>16
+              gq += __shfl_down_sync(p_mask, gq, 16);
+#endif
+#if p_Ntpg>8
+              gq += __shfl_down_sync(p_mask, gq, 8);
+#endif
+#if p_Ntpg>4
+              gq += __shfl_down_sync(p_mask, gq, 4);
+#endif
+#if p_Ntpg>2
+              gq += __shfl_down_sync(p_mask, gq, 2);
+#endif
+#if p_Ntpg>1
+              gq += __shfl_down_sync(p_mask, gq, 1);
+              gq = __shfl_sync(p_mask, gq, g*p_Ntpg); // broadcast to all threads in subwarp
+#endif
+#else
+
+
+#if p_Ntpg>1
+	      auto grp = item_.get_sub_group();
+	      int l = g*p_Ntpg +t;
+#if p_Ntpg>16	     
+              gq += sycl::select_from_group(grp, gq, l+16);
+#endif
+#if p_Ntpg>8	      
+              gq += sycl::select_from_group(grp, gq, l+8);
+#endif
+#if p_Ntpg>4
+              gq += sycl::select_from_group(grp, gq, l+4);
+#endif
+#if p_Ntpg>2
+              gq += sycl::select_from_group(grp, gq, l+2);
+#endif	
+              gq += sycl::select_from_group(grp, gq, l+1);
+	      gq =  sycl::select_from_group(grp, gq, g*p_Ntpg);
+#endif      
+	      
+#endif
+              // scatter
+              m = startG + t;
+              while(m<endG){
+                const dlong id = gatherIds[m];
+                q[id] = gq;
+                m+=p_Ntpg;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 #endif
 
 /*------------------------------------------------------------------------------

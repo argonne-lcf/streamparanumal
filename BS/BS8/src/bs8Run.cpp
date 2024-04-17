@@ -121,4 +121,26 @@ void bs8_t::Run(){
            bytes/(1.0e9 * elapsedTime),
            NflopsGlobal/(1.0e9 * elapsedTime));
   }
+
+  // check
+  memory<dfloat> qref(N), gqref(N), gq(N);
+  for(int n=0;n<N;++n){
+    qref[n] = n/(double)N;
+  }
+  gqref.copyFrom(qref);
+  mesh.ogs.GatherScatter(gqref, 1, ogs::Add, ogs::Sym); //dry run
+  
+  o_q.copyFrom(qref);
+  mesh.ogs.GatherScatter(o_q, 1, ogs::Add, ogs::Sym); //dry run
+  o_q.copyTo(gq);
+
+  double res = 0;
+
+  for(int n=0;n<N;++n){
+    res = std::max(res, fabs(gq[n]-gqref[n]));
+    //    std::cout << "n=" << n << ", qref=" << qref[n] << ", gq=" << gq[n] << ", gqref=" << gqref[n] << std::endl;
+  }
+  std::cout << "BS8: max difference between host and device gather is " << res << std::endl;
+
+  
 }
